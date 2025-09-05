@@ -2,6 +2,7 @@ import os, io, sys, subprocess
 from dotenv import load_dotenv
 from openai import OpenAI
 from google import genai
+from google.genai import types
 import gradio as gr
 from datetime import datetime
 from placeholder_python_code import pi_1, pi_2
@@ -67,37 +68,37 @@ def write_output(cpp: str):
     with open(f"optimized-{current_time}.cpp", "w") as f:
         f.write(code)
 
-def convert_and_optimize_code_with_openai(python):
+def convert_and_optimize_code_with_openai(python: str):
     stream = openai_client.chat.completions.create(
         model=OPENAI_MODEL,
         messages=messages_for_python(python),
         stream=True
     )
-    stream_response = ""
+
     for chunk in stream:
         fragment = chunk.choices[0].delta.content or ""
-        stream_response += fragment
-        # print(fragment, end="", flush=True)
-
         yield fragment
 
-def convert_and_optimize_code_with_gemini(python):
+def convert_and_optimize_code_with_gemini(python: str):
     user_prompt = user_prompt_for_python(python)
 
     stream = gemini_client.models.generate_content_stream(
         model=GEMINI_MODEL,
-        contents=user_prompt
+        contents=user_prompt,
+        config=types.GenerateContentConfig(
+            system_instruction=system_message
+        )
     )
 
     for chunk in stream:
-        stream_response = getattr(chunk, "text", None)
+        stream_response = getattr(chunk, "text", "")
         if stream_response:
             yield stream_response
 
     ### OR THIS -- Gemini model returns an object other than string. So it needs to retrieve the text
     # for chunk in stream:
-    #     if chunk.text:
-    #         yield chunk.text
+    #     text_fragment = chunk.text or ""
+    #     yield text_fragment
 
 
 # convert_and_optimize_code_with_openai(pi_1)
