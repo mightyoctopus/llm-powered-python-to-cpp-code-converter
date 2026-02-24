@@ -1,4 +1,4 @@
-import os, io, sys, subprocess
+import os, io, sys, subprocess, shutil
 from dotenv import load_dotenv
 from openai import OpenAI
 from google import genai
@@ -39,7 +39,9 @@ def system_message_for_python() -> str:
 
     return system_message
 
+
 current_time = datetime.now().strftime("%Y%m%d_%H:%M:%S")
+
 
 def user_prompt_for_python(python_code):
     user_prompt = """
@@ -58,18 +60,21 @@ def user_prompt_for_python(python_code):
 
     return user_prompt
 
+
 def messages_for_python(python):
     return [
         {"role": "system", "content": system_message_for_python()},
         {"role": "user", "content": user_prompt_for_python(python)}
     ]
 
+
 ### remove ```cpp and ```
 ### cpp is a file extension of C++ code
 def write_output(cpp: str):
     code = cpp.replace("```cpp", "").replace("```", "")
-    with open(f"optimized-{current_time}.cpp", "w") as f:
+    with open(f"/tmp/optimized-{current_time}.cpp", "w") as f:
         f.write(code)
+
 
 def convert_and_optimize_code_with_openai(python: str):
     stream = openai_client.chat.completions.create(
@@ -77,10 +82,14 @@ def convert_and_optimize_code_with_openai(python: str):
         messages=messages_for_python(python),
         stream=True
     )
-
+    stream_response = ""
     for chunk in stream:
         fragment = chunk.choices[0].delta.content or ""
+        stream_response += fragment
+        # print(fragment, end="", flush=True)
+
         yield fragment
+
 
 def convert_and_optimize_code_with_gemini(python: str):
     user_prompt = user_prompt_for_python(python)
@@ -89,8 +98,8 @@ def convert_and_optimize_code_with_gemini(python: str):
         model=GEMINI_MODEL,
         contents=user_prompt,
         config=types.GenerateContentConfig(
-            system_instruction=system_message
-        )
+            system_instruction=system_message_for_python()
+        ),
     )
 
     for chunk in stream:
@@ -100,8 +109,8 @@ def convert_and_optimize_code_with_gemini(python: str):
 
     ### OR THIS -- Gemini model returns an object other than string. So it needs to retrieve the text
     # for chunk in stream:
-    #     text_fragment = chunk.text or ""
-    #     yield text_fragment
+    #     if chunk.text:
+    #         yield chunk.text
 
 
 # convert_and_optimize_code_with_openai(pi_1)
@@ -128,6 +137,7 @@ def stream_text_on_ui(model, pi):
         response = response.replace("```cpp", "").replace("```", "").replace("cpp", "")
         yield response
 
+
 def run_python_code(code: str):
     output = io.StringIO()
     old_stdout = sys.stdout
@@ -141,23 +151,27 @@ def run_python_code(code: str):
     finally:
         sys.stdout = old_stdout
 
+
 ### subprocess used to connect to the external programs (g++ for c++ build and compile)
 def run_cpp_code(code: str):
     write_output(code)
     try:
+        compiler = shutil.which("clang++") or shutil.which("g++")
+        if not compiler:
+            return "Error: No C++ compiler found in container."
+
         ### 1. Compile the code
         compile_cmd = [
-            "clang++", "-Ofast", "-std=c++17",
-            "-march=armv8.5-a", "-mtune=apple-m1",
-            "-mcpu=apple-m1", "-o", "optimized",
-            f"optimized-{current_time}.cpp"
+            compiler, "-O3", "-ffast-math", "-std=c++17",
+            "-o", "/tmp/optimized",
+            f"/tmp/optimized-{current_time}.cpp"
         ]
         subprocess.run(
             compile_cmd, check=True, text=True, capture_output=True
         )
 
         ### 2. Run the code
-        run_cmd = [f"./optimized"]
+        run_cmd = [f"/tmp/optimized"]
         run_result = subprocess.run(
             run_cmd, check=True, text=True, capture_output=True
         )
@@ -167,8 +181,8 @@ def run_cpp_code(code: str):
 
 
 with gr.Blocks(
-    css=css_elements,
-    title="Python To C++ Code Convertor"
+        css=css_elements,
+        title="Python To C++ Code Convertor"
 ) as ui:
     with gr.Row():
         pi_textbox = gr.Textbox(label="Place Python Code Here:", lines=20, value=pi_1)
@@ -210,24 +224,5 @@ with gr.Blocks(
         outputs=cpp_out
     )
 
-
-ui.launch(inbrowser=True, share=True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+port = int(os.getenv("PORT", 7860))
+ui.launch(server_name="0.0.0.0", server_port=port)
