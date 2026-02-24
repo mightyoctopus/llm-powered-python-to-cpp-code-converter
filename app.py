@@ -23,13 +23,12 @@ GEMINI_MODEL = "gemini-1.5-flash"
 
 def system_message_for_python() -> str:
     system_message = """
-        You are an assistant that reimplements Python code in high performance C++
-        for an M1 Mac.
+        You are a code assistant that reimplements Python code into highly performant C++ code as best as optimized for execution speed.
     """.strip()
 
     system_message += """
         Respond only with C++; use comments sparingly and do not provide any
-        explanation other than occasion comments.
+        explanation other than occasional comments.
     """.strip()
 
     system_message += """
