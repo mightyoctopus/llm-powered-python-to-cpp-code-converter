@@ -21,20 +21,23 @@ OPENAI_MODEL = "gpt-5-mini-2025-08-07"
 GEMINI_MODEL = "gemini-1.5-flash"
 
 
-system_message = """
-    You are an assistant that reimplements Python code in high performance C++
-    for an M1 Mac.
-""".strip()
+def system_message_for_python() -> str:
+    system_message = """
+        You are an assistant that reimplements Python code in high performance C++
+        for an M1 Mac.
+    """.strip()
 
-system_message += """
-    Respond only with C++; use comments sparingly and do not provide any
-    explanation other than occasion comments.
-""".strip()
+    system_message += """
+        Respond only with C++; use comments sparingly and do not provide any
+        explanation other than occasion comments.
+    """.strip()
 
-system_message += """
-    The C++ response needs to produce an identical output in the 
-    fastest possible time. 
-""".strip()
+    system_message += """
+        The C++ response needs to produce an identical output in the 
+        fastest possible time. 
+    """.strip()
+
+    return system_message
 
 current_time = datetime.now().strftime("%Y%m%d_%H:%M:%S")
 
@@ -57,7 +60,7 @@ def user_prompt_for_python(python_code):
 
 def messages_for_python(python):
     return [
-        {"role": "system", "content": system_message},
+        {"role": "system", "content": system_message_for_python()},
         {"role": "user", "content": user_prompt_for_python(python)}
     ]
 
