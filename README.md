@@ -21,25 +21,12 @@ https://drive.google.com/file/d/1TmJvlqpq0uH14oL2JINwTh9trgiiyOJo/view?usp=drive
 
 ## Project Structure
 llm-powered-python-to-cpp-code-converter/
-│
-├── run.py
-│   Main application entry point. Handles environment setup, LLM calls,
-│   streaming responses, code execution, and the Gradio UI.
-│
-├── placeholder_python_code.py
-│   Contains example Python snippets used as default inputs in the UI.
-│
-├── css_elements.py
-│   Custom CSS styles used to format the Gradio interface.
-│
-├── assets/
-│   Contains diagrams and images used in the README documentation.
-│
-├── requirements.txt
-│   Python dependencies required to run the project.
-│
-└── README.md
-    Project documentation and usage instructions.
+- run.py: Main application entry point. Handles environment setup, LLM calls, streaming responses, code execution, and the Gradio UI. 
+- placeholder_python_code.py: Contains example Python snippets used as default inputs in the UI. 
+- css_elements.py: Custom CSS styles used to format the Gradio interface. 
+- assets/: Contains diagrams and images used in the README documentation. 
+- requirements.txt: Python dependencies required to run the project. 
+- README.md: Project documentation and usage instructions.
 
 ## Entry Point
 
